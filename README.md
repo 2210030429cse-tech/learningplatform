@@ -47,15 +47,15 @@ EduMate AI provides:
 ---
 
 ## Project Structure
-
 src/
-┣ components/
-┃ ┣ Chat.jsx
-┃ ┗ Message.jsx
-┣ styles/
-┃ ┗ chat.css
-┣ App.jsx
-┗ main.jsx
+├── components/
+│   ├── Chat.jsx
+│   └── Message.jsx
+├── styles/
+│   └── chat.css
+├── App.jsx
+└── main.jsx
+
 ---
 
 ##  Contact
