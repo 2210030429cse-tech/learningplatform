@@ -1,16 +1,65 @@
-# React + Vite
+# 🎓 EduMate AI — Personalized Learning Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+EduMate AI is an **AI-powered personalized education platform** that adapts learning content and assessments based on a student’s **skill level** and **subject**.  
+It combines an **interactive chatbot** with an **AI-generated quiz system**, making learning adaptive, engaging, and effective.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+##  Live Demo
+https://learningplatform-ten.vercel.app/
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Problem Statement
+Traditional education platforms:
+- Provide the same content to all learners
+- Lack personalization
+- Do not offer adaptive assessments
 
-## Expanding the ESLint configuration
+This results in ineffective learning for students with different skill levels.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Solution
+EduMate AI provides:
+- Personalized explanations based on learner level
+- Subject-specific learning
+- AI-generated quizzes for self-assessment
+- Clean, modern, student-friendly UI
+
+---
+
+## Features
+-  AI Tutor Chatbot
+-  Personalized Learning (Level + Subject)
+-  AI Quiz Generator (MCQs)
+-  Polished UI
+-  Real-time AI responses
+
+---
+
+## Tech Stack
+- **Frontend:** React.js, Vite
+- **AI:** OpenRouter API (Free LLM)
+- **Styling:** Custom CSS
+- **Deployment:** Vercel
+
+---
+
+## Project Structure
+
+src/
+┣ components/
+┃ ┣ Chat.jsx
+┃ ┗ Message.jsx
+┣ styles/
+┃ ┗ chat.css
+┣ App.jsx
+┗ main.jsx
+---
+
+##  Contact
+Feel free to reach out via LinkedIn or open an issue if you'd like to collaborate!
+
+LinkedIn:
+https://www.linkedin.com/in/manojkumar-sanda-767025213/
