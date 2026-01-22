@@ -1,7 +1,7 @@
 const Header = () => {
   return (
     <div style={styles.header}>
-      🎓 EduMate AI – Personalized Learning Assistant
+      EduMate AI – Personalized Learning Assistant 
     </div>
   );
 };

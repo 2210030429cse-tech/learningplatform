@@ -18,7 +18,7 @@ const Chat = () => {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showScrollButton, setShowScrollButton] = useState(false);
+
   const [level, setLevel] = useState("Beginner");
   const [subject, setSubject] = useState("General");
 
@@ -42,26 +42,6 @@ const Chat = () => {
       totalCorrect: prev.totalCorrect + correctCount,
     }));
   };
-  // Show/hide scroll button when user scrolls up
-useEffect(() => {
-  const handleScroll = () => {
-    if (!chatRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = chatRef.current;
-    // Show button if user is more than 300px from bottom
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 300;
-    setShowScrollButton(!isNearBottom);
-  };
-
-  const container = chatRef.current;
-  if (container) {
-    container.addEventListener("scroll", handleScroll);
-    handleScroll(); // Initial check
-  }
-
-  return () => {
-    if (container) container.removeEventListener("scroll", handleScroll);
-  };
-}, []);
 
   const accuracy = progress.totalQuizzes > 0
     ? Math.round((progress.totalCorrect / (progress.totalQuizzes * 5)) * 100)
@@ -81,13 +61,13 @@ useEffect(() => {
     }
   };
 
-  // AI Session Summary + Revision Plan
+  // ── NEW: AI Session Summary + Revision Plan ──
   const [sessionSummary, setSessionSummary] = useState("");
   const [revisionPlan, setRevisionPlan] = useState("");
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [generatingPlan, setGeneratingPlan] = useState(false);
 
-  const generateSummaryAndPlan = async (type) => {
+  const generateSummaryAndPlan = async (type) => {  // type: "summary" or "plan"
     const isSummary = type === "summary";
     const setter = isSummary ? setSessionSummary : setRevisionPlan;
     const loadingSetter = isSummary ? setGeneratingSummary : setGeneratingPlan;
@@ -99,11 +79,11 @@ useEffect(() => {
 
     const chatHistory = messages
       .slice(1)
-      .map((m) => `${m.role === "ai" ? "Tutor" : "You"}: ${m.text.substring(0, 280)}${m.text.length > 280 ? "..." : ""}`)
+      .map(m => `${m.role === "ai" ? "Tutor" : "You"}: ${m.text.substring(0, 280)}${m.text.length > 280 ? "..." : ""}`)
       .join("\n");
 
     const quizPart = quiz.length > 0 && quizSubmitted
-      ? `Recent Quiz (${subject}, ${level}): Score ${calculateScore()}/${quiz.length} (${Math.round((calculateScore() / quiz.length) * 100)}%)\n`
+      ? `Recent Quiz (${subject}, ${level}): Score ${calculateScore()}/${quiz.length} (${Math.round((calculateScore()/quiz.length)*100)}%)\n`
       : "";
 
     const progressPart = `Overall: ${progress.totalQuizzes} quizzes, ${accuracy}% accuracy\n`;
@@ -118,11 +98,11 @@ ${quizPart}${progressPart}
 
 Conversation:
 ${chatHistory.substring(0, 1800)}${chatHistory.length > 1800 ? "\n[...]" : ""}
+
 `;
 
     const prompt = isSummary
-      ? basePrompt +
-        `
+      ? basePrompt + `
 Create a short, warm session summary (4–8 sentences).
 - Highlight main topics discussed
 - Mention quiz result if any
@@ -130,8 +110,7 @@ Create a short, warm session summary (4–8 sentences).
 - End with a motivational note
 - Simple language, no code/JSON/markdown
 `
-      : basePrompt +
-        `
+      : basePrompt + `
 Create a short, actionable revision plan / next steps (4–7 sentences or bullet points).
 - Suggest 2–4 topics or concepts to revise based on chat & quiz
 - Recommend practice or questions to ask next time
@@ -169,10 +148,10 @@ Create a short, actionable revision plan / next steps (4–7 sentences or bullet
       setter("Sorry, couldn't generate it right now. Please try again.");
     } finally {
       loadingSetter(false);
-      // Scroll after content is rendered
-      setTimeout(scrollToBottom, 150);
     }
   };
+
+  // ────────────────────────────────────────
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem(THEME_KEY);
@@ -190,22 +169,19 @@ Create a short, actionable revision plan / next steps (4–7 sentences or bullet
   const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
   const chatRef = useRef(null);
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-    } else if (chatRef.current) {
-      chatRef.current.scrollTo({
-        top: chatRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  };
+  const quizRef = useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading, quizSubmitted, sessionSummary, revisionPlan]);
+    if (chatRef.current) {
+      chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
+    }
+  }, [messages, loading]);
+
+  useEffect(() => {
+    if (quizRef.current && quiz.length > 0) {
+      quizRef.current.scrollTo({ top: quizRef.current.scrollHeight, behavior: "smooth" });
+    }
+  }, [quiz, quizSubmitted, userAnswers]);
 
   const getCurrentSystemPrompt = () => {
     return `You are EduMate AI — a friendly, adaptive tutor.
@@ -268,7 +244,6 @@ If unclear — ask clarifying questions politely.`;
       ]);
     } finally {
       setLoading(false);
-      scrollToBottom();
     }
   };
 
@@ -336,7 +311,6 @@ Format:
       alert("Failed to generate quiz. Please try again.");
     } finally {
       setLoading(false);
-      scrollToBottom();
     }
   };
 
@@ -357,7 +331,7 @@ Format:
 
   const generateFeedback = (score, total) => {
     const percentage = Math.round((score / total) * 100);
-
+    
     let emoji = "😊";
     let message = "";
     let suggestion = "";
@@ -368,17 +342,20 @@ Format:
       message = "Outstanding performance!";
       toneClass = "excellent";
       suggestion = `You're mastering ${subject} at ${level} level. Ready for advanced challenges?`;
-    } else if (percentage >= 60) {
+    } 
+    else if (percentage >= 60) {
       emoji = "👍";
       message = "Great job — strong foundation!";
       toneClass = "good";
       suggestion = `Focus on the areas you missed to reach the next level.`;
-    } else if (percentage >= 40) {
+    } 
+    else if (percentage >= 40) {
       emoji = "🔥";
       message = "You're improving!";
       toneClass = "average";
       suggestion = `Review the missed questions — want explanations?`;
-    } else {
+    } 
+    else {
       emoji = "🤗";
       message = "Every step counts!";
       toneClass = "needs-work";
@@ -392,7 +369,6 @@ Format:
     const score = calculateScore();
     updateProgress(score);
     setQuizSubmitted(true);
-    scrollToBottom();
   };
 
   const resetQuiz = () => {
@@ -420,7 +396,7 @@ Format:
         </select>
 
         <button onClick={generateQuiz} disabled={loading || generatingSummary || generatingPlan}>
-          📝 Generate Quiz
+           Generate Quiz
         </button>
 
         <button
@@ -459,8 +435,9 @@ Format:
       {/* Progress Tracker */}
       <div className="progress-card">
         <div className="progress-header">
-          <h3>📈 Your Learning Progress</h3>
-          <button
+          <h3> Your Learning Progress</h3>
+          
+          <button 
             className="reset-progress-btn small"
             onClick={resetAllProgress}
             title="Reset progress"
@@ -485,7 +462,7 @@ Format:
         </div>
 
         <div className="progress-bar-container">
-          <div
+          <div 
             className="progress-bar-fill"
             style={{ width: `${accuracy}%` }}
           ></div>
@@ -499,7 +476,7 @@ Format:
         <div className="session-summary-card">
           <div className="summary-header">
             <h3>📝 Session Summary</h3>
-            <button
+            <button 
               className="close-card-btn"
               onClick={() => setSessionSummary("")}
             >
@@ -519,7 +496,7 @@ Format:
         <div className="revision-plan-card">
           <div className="plan-header">
             <h3>📚 Revision Plan & Next Steps</h3>
-            <button
+            <button 
               className="close-card-btn"
               onClick={() => setRevisionPlan("")}
             >
@@ -543,157 +520,140 @@ Format:
         </div>
       )}
 
-      {/* Main chat content area */}
       <div className="chat-box" ref={chatRef}>
         {messages.map((msg, i) => (
           <Message key={i} role={msg.role} text={msg.text} />
         ))}
         {loading && <p className="loading">EduMate is thinking...</p>}
+      </div>
 
-        {/* Quiz Section */}
-        {quiz.length > 0 && (
-          <div className="quiz-section" ref={quizRef}>
-            <div className="quiz-header">
-              <h3>🧠 Quiz — {subject} ({level})</h3>
-              {quizSubmitted && (
-                <button onClick={resetQuiz} className="reset-btn">
-                  New Quiz
-                </button>
-              )}
-            </div>
+      {quiz.length > 0 && (
+        <div className="quiz-section" ref={quizRef}>
+          {/* Your existing quiz section code remains here unchanged */}
+          <div className="quiz-header">
+            <h3>🧠 Quiz — {subject} ({level})</h3>
+            {quizSubmitted && (
+              <button onClick={resetQuiz} className="reset-btn">
+                New Quiz
+              </button>
+            )}
+          </div>
 
-            {quizSubmitted ? (
-              <div className="quiz-results">
-                <h4 className="score">
-                  Score: {calculateScore()} / {quiz.length} (
-                  {Math.round((calculateScore() / quiz.length) * 100)}%)
-                </h4>
+          {quizSubmitted ? (
+            <div className="quiz-results">
+              <h4 className="score">
+                Score: {calculateScore()} / {quiz.length} (
+                {Math.round((calculateScore() / quiz.length) * 100)}%)
+              </h4>
 
-                {(() => {
-                  const fb = generateFeedback(calculateScore(), quiz.length);
-                  return (
-                    <div className={`performance-feedback ${fb.toneClass}`}>
-                      <div className="feedback-emoji">{fb.emoji}</div>
-                      <div className="feedback-content">
-                        <p className="feedback-message">{fb.message}</p>
-                        <p className="feedback-suggestion">{fb.suggestion}</p>
-                        <div className="feedback-percentage">{fb.percentage}%</div>
-                      </div>
+              {(() => {
+                const fb = generateFeedback(calculateScore(), quiz.length);
+                return (
+                  <div className={`performance-feedback ${fb.toneClass}`}>
+                    <div className="feedback-emoji">{fb.emoji}</div>
+                    <div className="feedback-content">
+                      <p className="feedback-message">{fb.message}</p>
+                      <p className="feedback-suggestion">{fb.suggestion}</p>
+                      <div className="feedback-percentage">{fb.percentage}%</div>
                     </div>
-                  );
-                })()}
+                  </div>
+                );
+              })()}
 
-                {quiz.map((q, i) => {
-                  const userChoice = userAnswers[i];
-                  const isCorrect = userChoice === q.answer;
+              {quiz.map((q, i) => {
+                const userChoice = userAnswers[i];
+                const isCorrect = userChoice === q.answer;
 
-                  return (
-                    <div key={i} className="quiz-question result">
-                      <b>{i + 1}. {q.question}</b>
-                      <ul>
-                        {q.options.map((opt, idx) => {
-                          const letter = String.fromCharCode(65 + idx);
-                          const isUserChoice = letter === userChoice;
-                          const isRight = letter === q.answer;
-
-                          let liClass = isRight
-                            ? "correct"
-                            : isUserChoice && !isCorrect
-                            ? "wrong"
-                            : "";
-
-                          return (
-                            <li key={idx} className={liClass}>
-                              {letter}) {opt}
-                              {isRight && " ✓ Correct"}
-                              {isUserChoice && !isCorrect && " ✗ Wrong"}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  );
-                })}
-
-                <p className="next-action-hint">
-                  Ready for more? Generate a new quiz or ask about any topic!
-                </p>
-              </div>
-            ) : (
-              <>
-                {quiz.map((q, i) => (
-                  <div key={i} className="quiz-question">
+                return (
+                  <div key={i} className="quiz-question result">
                     <b>{i + 1}. {q.question}</b>
-                    <ul className="options-list">
+                    <ul>
                       {q.options.map((opt, idx) => {
                         const letter = String.fromCharCode(65 + idx);
-                        const isSelected = userAnswers[i] === letter;
+                        const isUserChoice = letter === userChoice;
+                        const isRight = letter === q.answer;
+
+                        let liClass = isRight
+                          ? "correct"
+                          : isUserChoice && !isCorrect
+                          ? "wrong"
+                          : "";
 
                         return (
-                          <li key={idx}>
-                            <label className={`option-label ${isSelected ? "selected" : ""}`}>
-                              <input
-                                type="radio"
-                                name={`q-${i}`}
-                                checked={isSelected}
-                                onChange={() => handleSelectOption(i, letter)}
-                              />
-                              <span>{letter}) {opt}</span>
-                            </label>
+                          <li key={idx} className={liClass}>
+                            {letter}) {opt}
+                            {isRight && " ✓ Correct"}
+                            {isUserChoice && !isCorrect && " ✗ Wrong"}
                           </li>
                         );
                       })}
                     </ul>
                   </div>
-                ))}
+                );
+              })}
 
-                {Object.keys(userAnswers).length === quiz.length && (
-                  <button
-                    className="submit-quiz-btn"
-                    onClick={handleSubmitQuiz}
-                  >
-                    Submit Quiz & See Results
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        )}
+              <p className="next-action-hint">
+                Ready for more? Generate a new quiz or ask about any topic!
+              </p>
+            </div>
+          ) : (
+            <>
+              {quiz.map((q, i) => (
+                <div key={i} className="quiz-question">
+                  <b>{i + 1}. {q.question}</b>
+                  <ul className="options-list">
+                    {q.options.map((opt, idx) => {
+                      const letter = String.fromCharCode(65 + idx);
+                      const isSelected = userAnswers[i] === letter;
 
-        {/* Bottom anchor for auto-scroll */}
-        <div ref={messagesEndRef} style={{ height: "40px" }} />
-      </div>
-        
-      {/* Centered Input Box */}
+                      return (
+                        <li key={idx}>
+                          <label className={`option-label ${isSelected ? "selected" : ""}`}>
+                            <input
+                              type="radio"
+                              name={`q-${i}`}
+                              checked={isSelected}
+                              onChange={() => handleSelectOption(i, letter)}
+                            />
+                            <span>{letter}) {opt}</span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+
+              {Object.keys(userAnswers).length === quiz.length && (
+                <button
+                  className="submit-quiz-btn"
+                  onClick={handleSubmitQuiz}
+                >
+                  Submit Quiz & See Results
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       <div className="input-box">
+        
+
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask me anything..."
-          onKeyDown={(e) => e.key === "Enter" && !loading && sendMessage()}
-          disabled={loading}
+          onKeyDown={(e) => e.key === "Enter" && !loading && !generatingSummary && !generatingPlan && sendMessage()}
+          disabled={loading || generatingSummary || generatingPlan}
         />
-
-        <button
+         <button
           onClick={sendMessage}
-          disabled={loading || !input.trim()}
+          disabled={loading || !input.trim() || generatingSummary || generatingPlan}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-            />
-            
-          </svg>
           Send
         </button>
+
       </div>
     </div>
   );
