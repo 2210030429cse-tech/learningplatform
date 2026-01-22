@@ -305,7 +305,7 @@ Format:
                 );
               })}
             </div>
-          ) : (
+          ) : ( 
             <>
               {quiz.map((q, i) => (
                 <div key={i} className="quiz-question">
