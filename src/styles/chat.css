@@ -710,7 +710,7 @@ html, body, #root {
 .input-box input {
   flex: 1;
   height: 52px;
-  padding: 50px 18px;
+  padding: 20px 18px;
   font-size: 1rem;
   font-weight:1000;
   border: 1px solid #cbd5e1;
@@ -737,7 +737,7 @@ html, body, #root {
   
   height: 20px;
   min-width: 110px;
-  padding: 50px 18px;
+  padding: 20px 18px;
   font-size: 1rem;
   font-weight: 1000;
   color: white;

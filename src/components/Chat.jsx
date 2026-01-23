@@ -519,7 +519,24 @@ Format:
           <pre>{getCurrentSystemPrompt()}</pre>
         </div>
       )}
+<div className="input-box">
+        
 
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask me anything..."
+          onKeyDown={(e) => e.key === "Enter" && !loading && !generatingSummary && !generatingPlan && sendMessage()}
+          disabled={loading || generatingSummary || generatingPlan}
+        />
+         <button
+          onClick={sendMessage}
+          disabled={loading || !input.trim() || generatingSummary || generatingPlan}
+        >
+          Send
+        </button>
+
+      </div>
       <div className="chat-box" ref={chatRef}>
         {messages.map((msg, i) => (
           <Message key={i} role={msg.role} text={msg.text} />
@@ -637,24 +654,7 @@ Format:
         </div>
       )}
 
-      <div className="input-box">
-        
-
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask me anything..."
-          onKeyDown={(e) => e.key === "Enter" && !loading && !generatingSummary && !generatingPlan && sendMessage()}
-          disabled={loading || generatingSummary || generatingPlan}
-        />
-         <button
-          onClick={sendMessage}
-          disabled={loading || !input.trim() || generatingSummary || generatingPlan}
-        >
-          Send
-        </button>
-
-      </div>
+      
     </div>
   );
 };
