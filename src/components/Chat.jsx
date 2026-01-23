@@ -32,6 +32,8 @@ const Chat = () => {
     return saved ? JSON.parse(saved) : { totalQuizzes: 0, totalCorrect: 0 };
   });
 
+  const [showProgress, setShowProgress] = useState(false);
+
   useEffect(() => {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
   }, [progress]);
@@ -61,13 +63,13 @@ const Chat = () => {
     }
   };
 
-  // ── NEW: AI Session Summary + Revision Plan ──
+  // ── Session Summary + Revision Plan ──
   const [sessionSummary, setSessionSummary] = useState("");
   const [revisionPlan, setRevisionPlan] = useState("");
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [generatingPlan, setGeneratingPlan] = useState(false);
 
-  const generateSummaryAndPlan = async (type) => {  // type: "summary" or "plan"
+  const generateSummaryAndPlan = async (type) => {
     const isSummary = type === "summary";
     const setter = isSummary ? setSessionSummary : setRevisionPlan;
     const loadingSetter = isSummary ? setGeneratingSummary : setGeneratingPlan;
@@ -79,12 +81,15 @@ const Chat = () => {
 
     const chatHistory = messages
       .slice(1)
-      .map(m => `${m.role === "ai" ? "Tutor" : "You"}: ${m.text.substring(0, 280)}${m.text.length > 280 ? "..." : ""}`)
+      .map((m) => `${m.role === "ai" ? "Tutor" : "You"}: ${m.text.substring(0, 280)}${m.text.length > 280 ? "..." : ""}`)
       .join("\n");
 
-    const quizPart = quiz.length > 0 && quizSubmitted
-      ? `Recent Quiz (${subject}, ${level}): Score ${calculateScore()}/${quiz.length} (${Math.round((calculateScore()/quiz.length)*100)}%)\n`
-      : "";
+    const quizPart =
+      quiz.length > 0 && quizSubmitted
+        ? `Recent Quiz (${subject}, ${level}): Score ${calculateScore()}/${quiz.length} (${Math.round(
+            (calculateScore() / quiz.length) * 100
+          )}%)\n`
+        : "";
 
     const progressPart = `Overall: ${progress.totalQuizzes} quizzes, ${accuracy}% accuracy\n`;
 
@@ -102,7 +107,8 @@ ${chatHistory.substring(0, 1800)}${chatHistory.length > 1800 ? "\n[...]" : ""}
 `;
 
     const prompt = isSummary
-      ? basePrompt + `
+      ? basePrompt +
+        `
 Create a short, warm session summary (4–8 sentences).
 - Highlight main topics discussed
 - Mention quiz result if any
@@ -110,7 +116,8 @@ Create a short, warm session summary (4–8 sentences).
 - End with a motivational note
 - Simple language, no code/JSON/markdown
 `
-      : basePrompt + `
+      : basePrompt +
+        `
 Create a short, actionable revision plan / next steps (4–7 sentences or bullet points).
 - Suggest 2–4 topics or concepts to revise based on chat & quiz
 - Recommend practice or questions to ask next time
@@ -150,8 +157,6 @@ Create a short, actionable revision plan / next steps (4–7 sentences or bullet
       loadingSetter(false);
     }
   };
-
-  // ────────────────────────────────────────
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem(THEME_KEY);
@@ -331,7 +336,7 @@ Format:
 
   const generateFeedback = (score, total) => {
     const percentage = Math.round((score / total) * 100);
-    
+
     let emoji = "😊";
     let message = "";
     let suggestion = "";
@@ -342,20 +347,17 @@ Format:
       message = "Outstanding performance!";
       toneClass = "excellent";
       suggestion = `You're mastering ${subject} at ${level} level. Ready for advanced challenges?`;
-    } 
-    else if (percentage >= 60) {
+    } else if (percentage >= 60) {
       emoji = "👍";
       message = "Great job — strong foundation!";
       toneClass = "good";
       suggestion = `Focus on the areas you missed to reach the next level.`;
-    } 
-    else if (percentage >= 40) {
+    } else if (percentage >= 40) {
       emoji = "🔥";
       message = "You're improving!";
       toneClass = "average";
       suggestion = `Review the missed questions — want explanations?`;
-    } 
-    else {
+    } else {
       emoji = "🤗";
       message = "Every step counts!";
       toneClass = "needs-work";
@@ -379,6 +381,61 @@ Format:
 
   return (
     <div className="chat-container">
+
+      {/* Floating Progress Button */}
+      <button
+        className="progress-btn"
+        onClick={() => setShowProgress(true)}
+        title="Your Learning Progress"
+      >
+        {accuracy}%
+      </button>
+
+      {/* Progress Modal */}
+      {showProgress && (
+        <div className="progress-modal" onClick={() => setShowProgress(false)}>
+          <div className="progress-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Your Learning Progress</h3>
+
+            <div className="progress-stats">
+              <div className="stat-item">
+                <div className="stat-value">{progress.totalQuizzes}</div>
+                <div className="stat-label">Quizzes</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">{progress.totalCorrect}</div>
+                <div className="stat-label">Correct</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value big">{accuracy}%</div>
+                <div className="stat-label">Accuracy</div>
+              </div>
+            </div>
+
+            <div className="progress-bar-container">
+              <div className="progress-bar-fill" style={{ width: `${accuracy}%` }} />
+            </div>
+
+            <p className="progress-motivation">{getProgressMessage()}</p>
+
+            <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
+              <button
+                className="reset-progress-btn"
+                onClick={() => {
+                  resetAllProgress();
+                  setShowProgress(false);
+                }}
+              >
+                Reset Progress
+              </button>
+              <button style={{ marginLeft: "1rem" }} onClick={() => setShowProgress(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="controls">
         <select value={level} onChange={(e) => setLevel(e.target.value)}>
           <option>Beginner</option>
@@ -396,7 +453,7 @@ Format:
         </select>
 
         <button onClick={generateQuiz} disabled={loading || generatingSummary || generatingPlan}>
-           Generate Quiz
+          Generate Quiz
         </button>
 
         <button
@@ -415,10 +472,7 @@ Format:
           {generatingPlan ? "Generating..." : "Revision Plan"}
         </button>
 
-        <button
-          className="prompt-toggle-btn"
-          onClick={() => setShowPrompt(!showPrompt)}
-        >
+        <button className="prompt-toggle-btn" onClick={() => setShowPrompt(!showPrompt)}>
           {showPrompt ? "Hide Prompt" : "Show Prompt"}
         </button>
 
@@ -432,54 +486,12 @@ Format:
         </button>
       </div>
 
-      {/* Progress Tracker */}
-      <div className="progress-card">
-        <div className="progress-header">
-          <h3> Your Learning Progress</h3>
-          
-          <button 
-            className="reset-progress-btn small"
-            onClick={resetAllProgress}
-            title="Reset progress"
-          >
-            Reset
-          </button>
-        </div>
-
-        <div className="progress-stats">
-          <div className="stat-item">
-            <span className="stat-label">Quizzes</span>
-            <span className="stat-value">{progress.totalQuizzes}</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Correct</span>
-            <span className="stat-value">{progress.totalCorrect}</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Accuracy</span>
-            <span className="stat-value big">{accuracy}%</span>
-          </div>
-        </div>
-
-        <div className="progress-bar-container">
-          <div 
-            className="progress-bar-fill"
-            style={{ width: `${accuracy}%` }}
-          ></div>
-        </div>
-
-        <p className="progress-motivation">{getProgressMessage()}</p>
-      </div>
-
-      {/* Session Summary Card */}
+      {/* Session Summary */}
       {sessionSummary && (
         <div className="session-summary-card">
-          <div className="summary-header">
+          <div className="card-header">
             <h3>📝 Session Summary</h3>
-            <button 
-              className="close-card-btn"
-              onClick={() => setSessionSummary("")}
-            >
+            <button className="close-card-btn" onClick={() => setSessionSummary("")}>
               ×
             </button>
           </div>
@@ -491,15 +503,12 @@ Format:
         </div>
       )}
 
-      {/* Revision Plan Card */}
+      {/* Revision Plan */}
       {revisionPlan && (
         <div className="revision-plan-card">
-          <div className="plan-header">
+          <div className="card-header">
             <h3>📚 Revision Plan & Next Steps</h3>
-            <button 
-              className="close-card-btn"
-              onClick={() => setRevisionPlan("")}
-            >
+            <button className="close-card-btn" onClick={() => setRevisionPlan("")}>
               ×
             </button>
           </div>
@@ -519,9 +528,8 @@ Format:
           <pre>{getCurrentSystemPrompt()}</pre>
         </div>
       )}
-<div className="input-box">
-        
 
+      <div className="input-box">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -529,14 +537,14 @@ Format:
           onKeyDown={(e) => e.key === "Enter" && !loading && !generatingSummary && !generatingPlan && sendMessage()}
           disabled={loading || generatingSummary || generatingPlan}
         />
-         <button
+        <button
           onClick={sendMessage}
           disabled={loading || !input.trim() || generatingSummary || generatingPlan}
         >
           Send
         </button>
-
       </div>
+
       <div className="chat-box" ref={chatRef}>
         {messages.map((msg, i) => (
           <Message key={i} role={msg.role} text={msg.text} />
@@ -544,117 +552,136 @@ Format:
         {loading && <p className="loading">EduMate is thinking...</p>}
       </div>
 
+      {/* ── QUIZ MODAL ──────────────────────────────────────────────── */}
       {quiz.length > 0 && (
-        <div className="quiz-section" ref={quizRef}>
-          {/* Your existing quiz section code remains here unchanged */}
-          <div className="quiz-header">
-            <h3>🧠 Quiz — {subject} ({level})</h3>
-            {quizSubmitted && (
-              <button onClick={resetQuiz} className="reset-btn">
-                New Quiz
+        <div className={`quiz-modal ${quizSubmitted ? "results-visible" : ""}`}>
+          <div className="quiz-modal-content">
+            {/* Header */}
+            <div className="quiz-header">
+              <div>
+                <h3>🧠 Quiz — {subject} ({level})</h3>
+                <p className="quiz-subtitle">5 questions • Pick one answer each</p>
+              </div>
+              <button className="close-quiz-btn" onClick={resetQuiz} title="Close Quiz">
+                ×
               </button>
-            )}
-          </div>
+            </div>
 
-          {quizSubmitted ? (
-            <div className="quiz-results">
-              <h4 className="score">
-                Score: {calculateScore()} / {quiz.length} (
-                {Math.round((calculateScore() / quiz.length) * 100)}%)
-              </h4>
-
-              {(() => {
-                const fb = generateFeedback(calculateScore(), quiz.length);
-                return (
-                  <div className={`performance-feedback ${fb.toneClass}`}>
-                    <div className="feedback-emoji">{fb.emoji}</div>
-                    <div className="feedback-content">
-                      <p className="feedback-message">{fb.message}</p>
-                      <p className="feedback-suggestion">{fb.suggestion}</p>
-                      <div className="feedback-percentage">{fb.percentage}%</div>
+            {/* Questions view */}
+            {!quizSubmitted ? (
+              <div className="quiz-questions">
+                {quiz.map((q, i) => (
+                  <div key={i} className="quiz-question-card">
+                    <div className="question-text">
+                      <span className="q-number">{i + 1}</span>
+                      {q.question}
                     </div>
-                  </div>
-                );
-              })()}
 
-              {quiz.map((q, i) => {
-                const userChoice = userAnswers[i];
-                const isCorrect = userChoice === q.answer;
-
-                return (
-                  <div key={i} className="quiz-question result">
-                    <b>{i + 1}. {q.question}</b>
-                    <ul>
+                    <div className="options-grid">
                       {q.options.map((opt, idx) => {
                         const letter = String.fromCharCode(65 + idx);
-                        const isUserChoice = letter === userChoice;
-                        const isRight = letter === q.answer;
-
-                        let liClass = isRight
-                          ? "correct"
-                          : isUserChoice && !isCorrect
-                          ? "wrong"
-                          : "";
+                        const isSelected = userAnswers[i] === letter;
 
                         return (
-                          <li key={idx} className={liClass}>
-                            {letter}) {opt}
-                            {isRight && " ✓ Correct"}
-                            {isUserChoice && !isCorrect && " ✗ Wrong"}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })}
-
-              <p className="next-action-hint">
-                Ready for more? Generate a new quiz or ask about any topic!
-              </p>
-            </div>
-          ) : (
-            <>
-              {quiz.map((q, i) => (
-                <div key={i} className="quiz-question">
-                  <b>{i + 1}. {q.question}</b>
-                  <ul className="options-list">
-                    {q.options.map((opt, idx) => {
-                      const letter = String.fromCharCode(65 + idx);
-                      const isSelected = userAnswers[i] === letter;
-
-                      return (
-                        <li key={idx}>
-                          <label className={`option-label ${isSelected ? "selected" : ""}`}>
+                          <label key={idx} className={`option-item ${isSelected ? "selected" : ""}`}>
                             <input
                               type="radio"
                               name={`q-${i}`}
                               checked={isSelected}
                               onChange={() => handleSelectOption(i, letter)}
                             />
-                            <span>{letter}) {opt}</span>
+                            <div className="option-content">
+                              <span className="option-letter">{letter}</span>
+                              <span>{opt}</span>
+                            </div>
                           </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
 
-              {Object.keys(userAnswers).length === quiz.length && (
-                <button
-                  className="submit-quiz-btn"
-                  onClick={handleSubmitQuiz}
-                >
-                  Submit Quiz & See Results
-                </button>
-              )}
-            </>
-          )}
+                {Object.keys(userAnswers).length === quiz.length && (
+                  <button className="submit-quiz-btn big" onClick={handleSubmitQuiz}>
+                    Submit Quiz → See Results
+                  </button>
+                )}
+              </div>
+            ) : (
+              /* Results view */
+              <div className="quiz-results">
+                <div className="results-header">
+                  <h2 className="final-score">
+                    {calculateScore()} / {quiz.length}
+                  </h2>
+                  <div className="score-percentage">
+                    {Math.round((calculateScore() / quiz.length) * 100)}%
+                  </div>
+                </div>
+
+                {(() => {
+                  const fb = generateFeedback(calculateScore(), quiz.length);
+                  return (
+                    <div className={`performance-card ${fb.toneClass}`}>
+                      <div className="emoji-big">{fb.emoji}</div>
+                      <div>
+                        <h4>{fb.message}</h4>
+                        <p>{fb.suggestion}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="results-questions">
+                  {quiz.map((q, i) => {
+                    const userChoice = userAnswers[i];
+                    const isCorrect = userChoice === q.answer;
+
+                    return (
+                      <div key={i} className="result-question-card">
+                        <div className="question-text">
+                          <span className="q-number">{i + 1}</span>
+                          {q.question}
+                        </div>
+
+                        <div className="options-result">
+                          {q.options.map((opt, idx) => {
+                            const letter = String.fromCharCode(65 + idx);
+                            const isUserChoice = letter === userChoice;
+                            const isRight = letter === q.answer;
+
+                            let status = "";
+                            if (isRight) status = "correct";
+                            else if (isUserChoice && !isCorrect) status = "wrong";
+
+                            return (
+                              <div key={idx} className={`result-option ${status}`}>
+                                <span className="letter">{letter}</span>
+                                <span className="text">{opt}</span>
+                                {isRight && <span className="mark">✓</span>}
+                                {isUserChoice && !isCorrect && <span className="mark">✗</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="results-footer">
+                  <button className="new-quiz-btn" onClick={resetQuiz}>
+                    Generate New Quiz
+                  </button>
+                  <button className="close-btn" onClick={resetQuiz}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
-
-      
     </div>
   );
 };
