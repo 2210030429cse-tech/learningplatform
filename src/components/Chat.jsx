@@ -3,7 +3,8 @@ import Message from "./Message";
 import "../styles/chat.css";
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-const MODEL = "mistralai/devstral-2512:free";
+const MODEL = "nvidia/nemotron-3-nano-30b-a3b:free";
+
 
 
 // LocalStorage keys
