@@ -3,7 +3,8 @@ import Message from "./Message";
 import "../styles/chat.css";
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-const MODEL = "xiaomi/mimo-v2-flash:free";
+const MODEL = "mistralai/devstral-2512:free";
+
 
 // LocalStorage keys
 const THEME_KEY = "edumate-theme";
